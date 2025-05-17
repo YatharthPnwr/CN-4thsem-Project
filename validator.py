@@ -51,13 +51,3 @@ def validate_ipv4_syntax(ip_string):
 
     return is_valid, reasons
 
-# Sample Case
-if __name__ == "__main__":
-    test_ips = [
-        "192.168.1.1", "0.0.0.0", "255.255.255.255",
-        "256.1.1.1", "192.168.1.256", "192.168.1", "1.2.3.4.5",
-        "192.168.01.1", "abc.def.ghi.jkl", "1.2.3,4", "1..2.3", "1.2.3."
-    ]
-    for ip in test_ips:
-        valid, errors = validate_ipv4_syntax(ip)
-        print(f"IP: {ip} -> Valid: {valid}, Reasons: {errors if errors else 'N/A'}")
