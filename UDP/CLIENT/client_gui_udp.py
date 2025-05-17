@@ -7,30 +7,31 @@ import subprocess
 
 # Constants
 DEFAULT_SERVER_HOST = '127.0.0.1'
-DEFAULT_SERVER_PORT = 9999  # Assuming this is what was imported from UDP client
+DEFAULT_SERVER_PORT = 9999
 
 def send_and_receive(ip_address, server_host, server_port):
-    """Send IP address to server and receive validation results"""
+    """Send IP address to server and receive validation results using UDP"""
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(10)
-            s.connect((server_host, server_port))
-            s.sendall(ip_address.encode('utf-8'))
+        # Create UDP socket
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.settimeout(10)  # Set timeout for receiving
+            server_address = (server_host, server_port)
             
-            data_chunks = []
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                data_chunks.append(chunk)
+            # Send data - for UDP we use sendto instead of connect+sendall
+            s.sendto(ip_address.encode('utf-8'), server_address)
             
-            if not data_chunks:
-                return {"error": "No data received from server"}
-
-            full_data = b"".join(data_chunks)
-            return json.loads(full_data.decode('utf-8'))
+            # For UDP, we typically receive a single datagram response
+            try:
+                data, _ = s.recvfrom(4096)  # UDP typically uses single datagram
+                if not data:
+                    return {"error": "No data received from server"}
+                
+                return json.loads(data.decode('utf-8'))
+            except socket.timeout:
+                return {"error": "Timeout waiting for server response"}
+                
     except socket.timeout:
-        return {"error": f"Timeout: Could not connect to or receive from server at {server_host}:{server_port}"}
+        return {"error": f"Timeout: Could not connect to server at {server_host}:{server_port}"}
     except ConnectionRefusedError:
         return {"error": f"Connection refused. Is the server running at {server_host}:{server_port}?"}
     except json.JSONDecodeError:
