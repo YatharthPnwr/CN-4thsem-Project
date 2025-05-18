@@ -3,7 +3,7 @@ import socket
 import json
 from validator import validate_ipv4_syntax
 
-HOST = '0.0.0.0'
+HOST = '127.0.0.1'
 PORT = 65433 
 
 def run_server():

@@ -7,7 +7,7 @@ import subprocess
 
 # Constants
 DEFAULT_SERVER_HOST = '127.0.0.1'
-DEFAULT_SERVER_PORT = 9999
+DEFAULT_SERVER_PORT = 9999  # Assuming this is what was imported from UDP client
 
 def send_and_receive(ip_address, server_host, server_port):
     """Send IP address to server and receive validation results using UDP"""
@@ -52,13 +52,17 @@ def validate_from_file(filepath):
 
 def close_connection():
     """Function to exit the application properly"""
-    # This will restart the streamlit app, effectively closing the current instance
-    # The streamlit server will still be running, but the app will be reset
+    # Clear session state data
     st.session_state.clear()
-    st.runtime.legacy_caching.clear_cache()
-    st.experimental_rerun()
-    # For a complete exit, we can also use subprocess to kill the process
-    subprocess.Popen(['pkill', '-f', 'streamlit'])
+    # Use subprocess to kill the Streamlit process - this is the most reliable way to exit
+    try:
+        # Run the subprocess in a way that doesn't block
+        subprocess.Popen(['pkill', '-f', 'streamlit run'])
+    except Exception as e:
+        st.error(f"Error closing application: {str(e)}")
+        
+    # Set a flag that we can check to stop rendering content
+    st.session_state.exit_requested = True
 
 def main():
     # Set page config for minimal look
@@ -71,8 +75,14 @@ def main():
     # Initialize session state variables if they don't exist
     if 'response' not in st.session_state:
         st.session_state.response = None
-    if 'exit_button_pressed' not in st.session_state:
-        st.session_state.exit_button_pressed = False
+    if 'exit_requested' not in st.session_state:
+        st.session_state.exit_requested = False
+        
+    # Check if exit was requested
+    if st.session_state.exit_requested:
+        st.warning("Application is closing...")
+        st.stop()
+        return
 
     # App title with minimal styling
     st.title("IPv4 Validator Client")
@@ -142,24 +152,26 @@ def main():
                     status = st.session_state.response.get('status', 'Unknown')
                     # Fix: Check for both "Valid" and "valid" case variations
                     if status.lower() == "valid":
-                        # Modified: Improve alignment and styling to match IP Checked box
+                        # Further improved alignment to better match Streamlit's info box styling
                         st.markdown("""
                         <style>
+                        .valid-status-container {
+                            margin-top: -16px;
+                        }
                         .valid-status {
                             background-color: #28a745;
                             color: white;
-                            padding: 16px 10px;
+                            padding: 16px;
                             border-radius: 4px;
-                            text-align: center;
-                            font-weight: bold;
-                            height: 100%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
+                            text-align: left;
+                            font-weight: normal;
+                            font-size: 14px;
+                            border: 1px solid rgba(40, 167, 69, 0.2);
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
                         }
                         </style>
                         """, unsafe_allow_html=True)
-                        st.markdown(f'<div class="valid-status">Status: {status}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="valid-status-container"><div class="valid-status">Status: {status}</div></div>', unsafe_allow_html=True)
                     else:
                         st.error(f"Status: {status}")
                 
@@ -177,6 +189,7 @@ def main():
         import time
         time.sleep(1)
         close_connection()
+        st.stop()  # Stop execution immediately
 
 if __name__ == "__main__":
     main()

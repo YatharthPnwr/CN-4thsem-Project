@@ -1,7 +1,7 @@
 
 import socket
 import json
-from validator import validate_ipv4_syntax 
+from UDP.SERVER.validator import validate_ipv4_syntax 
 
 HOST = '0.0.0.0'  # Listen on all available network interfaces
 PORT = 65432      # Port to listen on (non-privileged ports are > 1023)

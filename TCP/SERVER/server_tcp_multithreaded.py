@@ -2,7 +2,7 @@
 import socket
 import json
 import threading
-from validator import validate_ipv4_syntax
+from UDP.SERVER.validator import validate_ipv4_syntax
 
 HOST = '0.0.0.0'
 PORT = 65432 
@@ -11,7 +11,6 @@ def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
     with conn:
         try:
-            
             data = conn.recv(1024)
             if not data:
                 print(f"[{addr}] No data, client likely closed connection gracefully before sending.")

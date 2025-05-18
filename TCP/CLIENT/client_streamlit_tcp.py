@@ -51,13 +51,17 @@ def validate_from_file(filepath):
 
 def close_connection():
     """Function to exit the application properly"""
-    # This will restart the streamlit app, effectively closing the current instance
-    # The streamlit server will still be running, but the app will be reset
+    # Clear session state data
     st.session_state.clear()
-    st.runtime.legacy_caching.clear_cache()
-    st.experimental_rerun()
-    # For a complete exit, we can also use subprocess to kill the process
-    subprocess.Popen(['pkill', '-f', 'streamlit'])
+    # Use subprocess to kill the Streamlit process - this is the most reliable way to exit
+    try:
+        # Run the subprocess in a way that doesn't block
+        subprocess.Popen(['pkill', '-f', 'streamlit run'])
+    except Exception as e:
+        st.error(f"Error closing application: {str(e)}")
+        
+    # Set a flag that we can check to stop rendering content
+    st.session_state.exit_requested = True
 
 def main():
     # Set page config for minimal look
@@ -70,8 +74,14 @@ def main():
     # Initialize session state variables if they don't exist
     if 'response' not in st.session_state:
         st.session_state.response = None
-    if 'exit_button_pressed' not in st.session_state:
-        st.session_state.exit_button_pressed = False
+    if 'exit_requested' not in st.session_state:
+        st.session_state.exit_requested = False
+        
+    # Check if exit was requested
+    if st.session_state.exit_requested:
+        st.warning("Application is closing...")
+        st.stop()
+        return
 
     # App title with minimal styling
     st.title("IPv4 Validator Client")
@@ -178,6 +188,7 @@ def main():
         import time
         time.sleep(1)
         close_connection()
+        st.stop()  # Stop execution immediately
 
 if __name__ == "__main__":
     main()
